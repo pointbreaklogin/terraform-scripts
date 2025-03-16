@@ -187,3 +187,40 @@ resource "aws_route53_record" "root" {
     evaluate_target_health = true
   }
 }
+
+#Adding Mysql port to existing SG
+resource "aws_security_group_rule" "allow_mysql" {
+  type = "ingress"
+  security_group_id = aws_security_group.pointbreak_auto_tf_sg.id
+  from_port = 3306
+  to_port = 3306
+  protocol = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  
+}
+
+#Create RDS database
+resource "aws_db_instance" "pointbreak_tf_db" {
+  identifier = "pointbreak-tf-db-instance"
+  engine = "mysql"
+  engine_version = "8.0.40"
+  instance_class = "db.t4g.micro"
+  allocated_storage = 10
+  max_allocated_storage = 20
+  storage_type = "gp2"
+  db_name = "pointbreak_test_tf_db"
+  username = "admin"
+  password = "Testpass4u4z"
+  publicly_accessible = true
+  skip_final_snapshot = true
+  multi_az = false
+  apply_immediately = true
+  vpc_security_group_ids = [aws_security_group.pointbreak_auto_tf_sg.id]
+  auto_minor_version_upgrade = true
+
+  #free tier compatible parameter
+  license_model = "general-public-license"
+  deletion_protection = false
+  storage_encrypted = false
+
+}
