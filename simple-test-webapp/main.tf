@@ -199,7 +199,7 @@ resource "aws_security_group_rule" "allow_mysql" {
   
 }
 
-#Create RDS database
+#Create RDS instances
 resource "aws_db_instance" "pointbreak_tf_db" {
   identifier = "pointbreak-tf-db-instance"
   engine = "mysql"
@@ -210,7 +210,7 @@ resource "aws_db_instance" "pointbreak_tf_db" {
   storage_type = "gp2"
   db_name = "pointbreak_test_tf_db"
   username = "admin"
-  password = "Testpass4u4z"
+  password = "Testpass4u4z"		#use AWS Secrets Manager to store passwords
   publicly_accessible = true
   skip_final_snapshot = true
   multi_az = false
