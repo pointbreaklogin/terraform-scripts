@@ -39,21 +39,16 @@ variable "local_key_path" {
 }
 
 #database variables
+variable "db_name" {
+  description = "database name"
+}
 variable "db_username" {
-  description = "Username for the RDS instance"
-  type        = string
-  default     = "admin"
+  description = "database user name"
 }
 variable "db_password" {
-  description = "Password for the RDS instance (store securely in AWS Secrets Manager)"
-  type        = string
-  default     = "Testpass4u4z"
-}
-variable "db_name" {
-  description = "Database name for the RDS instance"
-  type        = string
-  default     = "pointbreak_test_tf_db"
-}
+  description = "database password"
+  }
+
 variable "db_instance_class" {
   description = "RDS instance class"
   type        = string
@@ -87,10 +82,15 @@ variable "vpc_common_cidr" {
   default     = "0.0.0.0/0"
 }
 
-#Route53 configuration
+#domain details
 variable "domain" {
-  description = "pointbreak.space"
-  type        = string
+  description = "Domain for the site"
 }
 
+# It is better to use a terraform.tfvars file to provide values like the ones below,  
+#domain="" , db_name="", db_username="", db_password="", aws_reagin=""
+# but they still need to be declared here.  
+# If a value is defined in terraform.tfvars, it overrides the default value in the variables.tf file.  
+# Terraform automatically loads terraform.tfvars if it exists.  
+#Do NOT commit terraform.tfvars to Git, as it may contain sensitive information.
 
