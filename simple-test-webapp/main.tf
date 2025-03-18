@@ -1,11 +1,11 @@
 provider "aws" {
-  region = "ap-south-1"
+  region = var.aws_region
 }
 
 #Copy the local public key to the instances
 resource "aws_key_pair" "pointbreak_auto_tf_key" {
-  key_name   = "pointbreak-auto-tf-key"
-  public_key = file("~/.ssh/id_rsa.pub")
+  key_name   = var.key_name
+  public_key = file(var.local_key_path)
 }
 
 #Collect default VPC and subnet data
@@ -29,10 +29,10 @@ resource "aws_security_group" "pointbreak_auto_tf_sg" {
 resource "aws_security_group_rule" "allow_http_inbound" {
   type              = "ingress"
   security_group_id = aws_security_group.pointbreak_auto_tf_sg.id
-  from_port         = 8080
-  to_port           = 8080
+  from_port         = var.instance_port
+  to_port           = var.instance_port
   protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = [var.vpc_common_cidr]
 }
 
 #Security group for ALB inbound and outbound rules
@@ -46,7 +46,7 @@ resource "aws_security_group_rule" "allow_alb_http_inbound" {
   from_port         = 80
   to_port           = 80
   protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = [var.vpc_common_cidr]
 }
 
 resource "aws_security_group_rule" "allow_alb_all_outbound" {
@@ -55,7 +55,7 @@ resource "aws_security_group_rule" "allow_alb_all_outbound" {
   from_port         = 0
   to_port           = 0
   protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = [var.vpc_common_cidr]
 }
 
 #Create load balancers for web app
@@ -119,8 +119,8 @@ resource "aws_lb_listener_rule" "instances_lb_rule" {
 
 #Creating instance and run python server with custom port number
 resource "aws_instance" "creation_1" {
-  ami             = "ami-00bb6a80f01f03502"
-  instance_type   = "t2.micro"
+  ami             = var.instance_ami
+  instance_type   = var.instance_type
   key_name        = aws_key_pair.pointbreak_auto_tf_key.key_name
   security_groups = [aws_security_group.pointbreak_auto_tf_sg.name]
   user_data       = <<-EOF
@@ -130,7 +130,7 @@ resource "aws_instance" "creation_1" {
               EOF
 
   root_block_device {
-    volume_size = 8
+    volume_size = var.instance_storage
   }
 
   tags = {
@@ -139,8 +139,8 @@ resource "aws_instance" "creation_1" {
 }
 
 resource "aws_instance" "creation_2" {
-  ami             = "ami-00bb6a80f01f03502"
-  instance_type   = "t2.micro"
+  ami             = var.instance_ami
+  instance_type   = var.instance_type
   key_name        = aws_key_pair.pointbreak_auto_tf_key.key_name
   security_groups = [aws_security_group.pointbreak_auto_tf_sg.name]
   user_data       = <<-EOF
@@ -150,7 +150,7 @@ resource "aws_instance" "creation_2" {
               EOF
 
   root_block_device {
-    volume_size = 8
+    volume_size = var.instance_storage
   }
 
   tags = {
@@ -162,23 +162,23 @@ resource "aws_instance" "creation_2" {
 resource "aws_lb_target_group_attachment" "instance_1" {
   target_group_arn = aws_lb_target_group.instances.arn
   target_id        = aws_instance.creation_1.id
-  port             = 8080
+  port             = var.instance_port
 }
 
 resource "aws_lb_target_group_attachment" "instance_2" {
   target_group_arn = aws_lb_target_group.instances.arn
   target_id        = aws_instance.creation_2.id
-  port             = 8080
+  port             = var.instance_port
 }
 
 #Creation and connection of route53 with domain
 resource "aws_route53_zone" "primary" {
-  name = "pointbreak.space"
+  name = var.domain
 }
 
 resource "aws_route53_record" "root" {
   zone_id = aws_route53_zone.primary.zone_id
-  name    = "pointbreak.space"
+  name    = var.domain
   type    = "A"
 
   alias {
@@ -192,25 +192,25 @@ resource "aws_route53_record" "root" {
 resource "aws_security_group_rule" "allow_mysql" {
   type = "ingress"
   security_group_id = aws_security_group.pointbreak_auto_tf_sg.id
-  from_port = 3306
-  to_port = 3306
+  from_port = var.mysql_port
+  to_port = var.mysql_port
   protocol = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
+  cidr_blocks = [var.vpc_common_cidr]
   
 }
 
-#Create RDS instances
+#Create RDS instance
 resource "aws_db_instance" "pointbreak_tf_db" {
   identifier = "pointbreak-tf-db-instance"
   engine = "mysql"
   engine_version = "8.0.40"
-  instance_class = "db.t4g.micro"
-  allocated_storage = 10
-  max_allocated_storage = 20
-  storage_type = "gp2"
-  db_name = "pointbreak_test_tf_db"
-  username = "admin"
-  password = "Testpass4u4z"		#use AWS Secrets Manager to store passwords
+  instance_class = var.db_instance_class
+  allocated_storage = var.allocated_storage
+  max_allocated_storage = var.max_allocated_storage
+  storage_type = var.storage_type
+  db_name = var.db_name
+  username = var.db_username
+  password = var.db_password
   publicly_accessible = true
   skip_final_snapshot = true
   multi_az = false
