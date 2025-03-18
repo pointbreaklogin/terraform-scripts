@@ -29,6 +29,11 @@ This Terraform script provisions an AWS infrastructure that includes:
 - Configures a hosted zone for `pointbreak.space`.
 - Creates an A record to route traffic to the ALB.
 
+### 6. AWS RDS instance - free tier
+- Configures RDS free tier instance 
+- Use mysql database with specific storage
+- Add 3306 port to the SG
+
 ## Usage
 
 ### 1. Initialize Terraform
