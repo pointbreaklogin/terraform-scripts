@@ -47,7 +47,19 @@ terraform apply -auto-approve
 ```
 This will provision all the resources in AWS.
 
-### 3. Destroy the Infrastructure
+### 3. Checks configuration changes
+```sh
+terraform validate 
+```
+To verifies syntax and internal consistency of the configuration on the host, without referencing external resources.
+
+### 4. Checks configuration changes
+```sh
+terraform plan 
+```
+Checks configuration changes against remote state and cloud resources.
+
+### 5. Destroy the Infrastructure
 ```sh
 terraform destroy -auto-approve
 ```
